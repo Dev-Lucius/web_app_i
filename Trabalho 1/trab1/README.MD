@@ -1,0 +1,1 @@
+- php -S localhost:8080 -> Roda o Servidor PHP na porta 8080
