@@ -163,6 +163,17 @@
 
 ---
 
+## 📘 Resumo do Conteúdo
+
+| Nível          | Quantidade    | Temas principais                                                                  |
+| -------------- | ------------- | --------------------------------------------------------------------------------- |
+| 🟢 **Fácil**   | 25 exercícios | Variáveis, operadores, arrays, funções, formulários                               |
+| 🟡 **Médio**   | 25 exercícios | CRUD com PDO, JOINs, validação, sessões, upload de arquivos                       |
+| 🔴 **Difícil** | 30 exercícios | Design Patterns, APIs REST, JWT, transações, cache, testes, projetos integradores |
+
+
+---
+
 ## 📚 Recursos Complementares
 
 - [PHP Official Docs](https://www.php.net/docs.php)
