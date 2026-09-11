@@ -1,0 +1,84 @@
+/**
+ * css/estilo.css
+ * ---------------------------------------------------------------------
+ * CSS próprio do projeto.
+ *
+ * O Bootstrap (carregado via CDN) já resolve 90% do trabalho de layout
+ * (grid, formulários, botões, tabelas responsivas). Não faz sentido
+ * reescrever tudo isso à mão. Este arquivo cobre só os 10% restantes:
+ * a "identidade visual" do projeto e alguns ajustes de espaçamento.
+ *
+ * Guia rápido de como isso foi montado (pedido no enunciado):
+ * 1. Definimos poucas variáveis de cor no :root, para não espalhar
+ *    códigos de cor "mágicos" pelo arquivo inteiro.
+ * 2. Damos um estilo próprio à navbar (Bootstrap já tem a estrutura,
+ *    só trocamos a cor de fundo).
+ * 3. Damos um "respiro" (padding/margin) ao conteúdo principal, porque
+ *    por padrão ele fica colado na navbar.
+ * 4. Deixamos os cards de formulário com sombra leve e cantos
+ *    arredondados, para parecer menos "cru".
+ * 5. Pequenos detalhes de tabela (hover) e botões de ação.
+ * Nada aqui é obrigatório para o CRUD funcionar — é só polimento.
+ * ---------------------------------------------------------------------
+ */
+
+:root {
+    --cor-primaria: #2f6f4f;   /* verde, remete a "compras/finanças" */
+    --cor-primaria-escura: #234f38;
+    --cor-fundo: #f4f6f5;
+}
+
+body {
+    background-color: var(--cor-fundo);
+}
+
+/* ---------- Navbar ---------- */
+.app-navbar {
+    background-color: var(--cor-primaria);
+}
+
+.app-navbar .navbar-brand {
+    font-weight: 600;
+}
+
+/* ---------- Conteúdo principal ---------- */
+.app-container {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+/* ---------- Cards usados nos formulários (login, cadastro, pedido) --- */
+.card-formulario {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.card-formulario h3 {
+    margin-bottom: 1.5rem;
+    color: var(--cor-primaria-escura);
+}
+
+/* ---------- Tabelas de listagem ---------- */
+.table-hover tbody tr:hover {
+    background-color: #eef5f0;
+}
+
+.acoes-tabela form {
+    display: inline-block;
+    margin: 0;
+}
+
+/* ---------- Botão primário com a cor do projeto ---------- */
+.btn-primary,
+.btn-primary:hover {
+    background-color: var(--cor-primaria);
+    border-color: var(--cor-primaria-escura);
+}
+
+.btn-primary:hover {
+    background-color: var(--cor-primaria-escura);
+}
