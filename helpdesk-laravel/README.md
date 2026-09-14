@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🎫 Helpdesk de Tickets — Projeto Prático Laravel
 
 Projeto de estudo com autenticação e relacionamentos mais avançados que o
