@@ -473,4 +473,3 @@ dev-web-I/
 <div align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=0:FF6B6B,50:4ECDC4,100:45B7D1&height=100&section=footer" />
 </div>
->>>>>>> d919284c5e438c5de3d30bd3e795868f37886dea
