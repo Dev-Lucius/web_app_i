@@ -1,0 +1,39 @@
+/* ==========================================
+   PALETA DE CORES
+========================================== */
+
+:root {
+  /* Cores principais */
+  --cor-principal: #173d32;
+  --cor-secundaria: #285c49;
+  --cor-destaque: #387653;
+
+  /* Fundos */
+  --cor-fundo: #f3f1e9;
+  --cor-superficie: #ffffff;
+
+  /* Textos */
+  --cor-texto: #26352d;
+  --cor-texto-secundario: #7a857d;
+
+  /* Bordas */
+  --cor-borda: #e5e8e2;
+
+  /* Estados */
+  --cor-sucesso: #2e7d52;
+  --cor-alerta: #b77935;
+  --cor-erro: #c45151;
+
+  /* Dimensões */
+  --sidebar-width: 250px;
+  --header-height: 72px;
+
+  /* Arredondamentos */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Sombras */
+  --shadow-sm: 0 2px 8px rgba(23, 61, 50, 0.04);
+  --shadow-md: 0 4px 16px rgba(23, 61, 50, 0.06);
+}

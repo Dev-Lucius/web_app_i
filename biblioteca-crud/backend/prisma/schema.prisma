@@ -1,0 +1,90 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PerfilUsuario {
+  ADMIN
+  LEITOR
+}
+
+model Usuario {
+  id          Int           @id @default(autoincrement())
+  nome        String
+  email       String        @unique
+  senha       String?
+  perfil      PerfilUsuario @default(ADMIN)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  emprestimos Emprestimo[]
+
+  @@index([perfil])
+}
+
+model Livro {
+  id            Int              @id @default(autoincrement())
+  titulo        String
+  isbn          String?          @unique
+  anoPublicacao Int?
+  disponivel    Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  autores       LivroAutor[]
+  categorias    LivroCategoria[]
+  emprestimos   Emprestimo[]
+}
+
+model Autor {
+  id        Int          @id @default(autoincrement())
+  nome      String
+  biografia String?
+  createdAt DateTime     @default(now())
+  livros    LivroAutor[]
+}
+
+model LivroAutor {
+  livroId Int
+  autorId Int
+
+  livro Livro @relation(fields: [livroId], references: [id])
+  autor Autor @relation(fields: [autorId], references: [id])
+
+  @@id([livroId, autorId])
+}
+
+model Categoria {
+  id        Int              @id @default(autoincrement())
+  nome      String           @unique
+  descricao String?
+  livros    LivroCategoria[]
+}
+
+model LivroCategoria {
+  livroId     Int
+  categoriaId Int
+
+  livro     Livro     @relation(fields: [livroId], references: [id])
+  categoria Categoria @relation(fields: [categoriaId], references: [id])
+
+  @@id([livroId, categoriaId])
+}
+
+model Emprestimo {
+  id                    Int       @id @default(autoincrement())
+  dataEmprestimo        DateTime  @default(now())
+  dataPrevistaDevolucao DateTime
+  dataDevolucao         DateTime?
+  status                String    @default("ATIVO")
+
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  livroId Int
+  livro   Livro @relation(fields: [livroId], references: [id])
+}

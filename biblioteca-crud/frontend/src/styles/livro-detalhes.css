@@ -1,0 +1,156 @@
+.livro-detalhes__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.livro-detalhes {
+  background: #fff;
+  width: 100%;
+  max-width: 650px;
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: 14px;
+  padding: 28px;
+  color: #26352d;
+}
+
+.livro-detalhes__cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.livro-detalhes__cabecalho h2 {
+  margin: 0 0 6px;
+}
+
+.livro-detalhes__cabecalho p {
+  margin: 0;
+  color: #7a857d;
+  font-size: 14px;
+}
+
+.livro-detalhes__cabecalho button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #7a857d;
+}
+
+.livro-detalhes__identificacao {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.livro-detalhes__identificacao h3 {
+  margin: 0 0 10px;
+}
+
+.livro-detalhes__icone {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  background: #f3f1e9;
+  color: #285c49;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.livro-detalhes__secao {
+  border-top: 1px solid #e5e8e2;
+  padding: 20px 0;
+}
+
+.livro-detalhes__secao h3 {
+  font-size: 16px;
+  margin: 0 0 16px;
+}
+
+.livro-detalhes__grade {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.livro-detalhes__grade div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.livro-detalhes__grade span {
+  color: #7a857d;
+  font-size: 13px;
+}
+
+.livro-detalhes__grade strong {
+  font-size: 14px;
+}
+
+.livro-detalhes__secao ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.livro-detalhes__secao li {
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e8e2;
+}
+
+.livro-detalhes__secao li:last-child {
+  border-bottom: none;
+}
+
+.livro-detalhes__secao li p {
+  color: #7a857d;
+  font-size: 13px;
+  margin: 6px 0 0;
+}
+
+.livro-detalhes__estado {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #7a857d;
+}
+
+.livro-detalhes__erro {
+  padding: 20px;
+  color: #b42318;
+  background: #fef3f2;
+  border-radius: 8px;
+}
+
+.livro-detalhes__spinner {
+  animation: livro-detalhes-girar 1s linear infinite;
+}
+
+@keyframes livro-detalhes-girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 600px) {
+  .livro-detalhes {
+    padding: 20px;
+  }
+
+  .livro-detalhes__grade {
+    grid-template-columns: 1fr;
+  }
+}

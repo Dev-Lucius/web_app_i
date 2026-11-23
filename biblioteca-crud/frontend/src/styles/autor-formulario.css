@@ -1,0 +1,321 @@
+/*
+|--------------------------------------------------------------------------
+| MODAL - AUTOR FORMULÁRIO
+|--------------------------------------------------------------------------
+*/
+
+.autor-formulario__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 1rem;
+
+  background: rgba(20, 30, 25, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+.autor-formulario {
+  width: 100%;
+  max-width: 580px;
+
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--radius-lg);
+
+  box-shadow: var(--shadow-lg);
+
+  animation: autorFormularioEntrada 0.2s ease;
+}
+
+/*
+|--------------------------------------------------------------------------
+| CABEÇALHO
+|--------------------------------------------------------------------------
+*/
+
+.autor-formulario__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 1rem;
+  padding: 1.5rem;
+
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.autor-formulario__titulo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.autor-formulario__icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+
+  border-radius: 12px;
+
+  background: rgba(23, 61, 50, 0.09);
+  color: var(--cor-principal);
+}
+
+.autor-formulario__titulo h2 {
+  color: var(--cor-texto);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.autor-formulario__titulo p {
+  margin-top: 0.35rem;
+
+  color: var(--cor-texto-secundario);
+  font-size: 0.82rem;
+}
+
+.autor-formulario__fechar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 36px;
+  height: 36px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: transparent;
+  color: var(--cor-texto-secundario);
+
+  transition: 0.2s;
+}
+
+.autor-formulario__fechar:hover {
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+}
+
+/*
+|--------------------------------------------------------------------------
+| CAMPOS
+|--------------------------------------------------------------------------
+*/
+
+.autor-formulario__campos {
+  display: flex;
+  flex-direction: column;
+  gap: 1.3rem;
+
+  padding: 1.5rem;
+}
+
+.autor-formulario__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.autor-formulario__campo label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+
+  color: var(--cor-texto);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.autor-formulario__campo label span {
+  color: var(--cor-erro);
+}
+
+.autor-formulario__campo label small {
+  margin-left: auto;
+
+  color: var(--cor-texto-secundario);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.autor-formulario__campo input,
+.autor-formulario__campo textarea {
+  width: 100%;
+
+  padding: 0.85rem 1rem;
+
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--radius-md);
+
+  background: white;
+  color: var(--cor-texto);
+
+  font-size: 0.88rem;
+
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.autor-formulario__campo input:focus,
+.autor-formulario__campo textarea:focus {
+  border-color: var(--cor-principal);
+
+  box-shadow: 0 0 0 3px rgba(23, 61, 50, 0.08);
+}
+
+.autor-formulario__campo textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.5;
+}
+
+.autor-formulario__campo input:disabled,
+.autor-formulario__campo textarea:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.autor-formulario__contador {
+  align-self: flex-end;
+
+  color: var(--cor-texto-secundario);
+  font-size: 0.75rem;
+}
+
+/*
+|--------------------------------------------------------------------------
+| ERRO
+|--------------------------------------------------------------------------
+*/
+
+.autor-formulario__erro {
+  margin: 0 1.5rem;
+
+  padding: 0.85rem 1rem;
+
+  border: 1px solid rgba(190, 65, 65, 0.2);
+  border-radius: var(--radius-md);
+
+  background: rgba(190, 65, 65, 0.07);
+  color: var(--cor-erro);
+
+  font-size: 0.85rem;
+}
+
+/*
+|--------------------------------------------------------------------------
+| BOTÕES
+|--------------------------------------------------------------------------
+*/
+
+.autor-formulario__acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+
+  padding: 1.25rem 1.5rem;
+
+  border-top: 1px solid var(--cor-borda);
+}
+
+.autor-formulario__botao-cancelar,
+.autor-formulario__botao-salvar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  min-height: 42px;
+  padding: 0.7rem 1rem;
+
+  border-radius: var(--radius-md);
+
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  transition: 0.2s;
+}
+
+.autor-formulario__botao-cancelar {
+  border: 1px solid var(--cor-borda);
+
+  background: white;
+  color: var(--cor-texto);
+}
+
+.autor-formulario__botao-cancelar:hover {
+  background: var(--cor-fundo);
+}
+
+.autor-formulario__botao-salvar {
+  border: 1px solid var(--cor-principal);
+
+  background: var(--cor-principal);
+  color: white;
+}
+
+.autor-formulario__botao-salvar:hover {
+  background: var(--cor-secundaria);
+}
+
+.autor-formulario__botao-cancelar:disabled,
+.autor-formulario__botao-salvar:disabled,
+.autor-formulario__fechar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/*
+|--------------------------------------------------------------------------
+| ANIMAÇÃO
+|--------------------------------------------------------------------------
+*/
+
+@keyframes autorFormularioEntrada {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| RESPONSIVIDADE
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 600px) {
+  .autor-formulario__cabecalho {
+    padding: 1.1rem;
+  }
+
+  .autor-formulario__campos {
+    padding: 1.1rem;
+  }
+
+  .autor-formulario__acoes {
+    flex-direction: column-reverse;
+    padding: 1.1rem;
+  }
+
+  .autor-formulario__botao-cancelar,
+  .autor-formulario__botao-salvar {
+    width: 100%;
+  }
+}

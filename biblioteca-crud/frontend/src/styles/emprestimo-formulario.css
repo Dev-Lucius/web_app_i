@@ -1,0 +1,569 @@
+/*
+|--------------------------------------------------------------------------
+| FORMULÁRIO DE EMPRÉSTIMO
+|--------------------------------------------------------------------------
+*/
+
+/* Overlay do modal */
+.emprestimo-formulario__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background: rgba(20, 35, 28, 0.58);
+  backdrop-filter: blur(4px);
+
+  overflow-y: auto;
+}
+
+/*
+|--------------------------------------------------------------------------
+| ESTRUTURA PRINCIPAL
+|--------------------------------------------------------------------------
+*/
+
+.emprestimo-formulario {
+  width: 100%;
+  max-width: 570px;
+
+  background-color: #fff;
+  opacity: 1;
+  border: 1px solid var(--cor-borda);
+  border-radius: 16px;
+
+  box-shadow: 0 20px 60px rgba(20, 35, 28, 0.22);
+
+  overflow: hidden;
+
+  animation: emprestimoModalEntrada 0.22s ease;
+}
+
+@keyframes emprestimoModalEntrada {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| CABEÇALHO
+|--------------------------------------------------------------------------
+*/
+
+.emprestimo-formulario__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 26px 28px 24px;
+
+  background-color: #f8f8f4;
+
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.emprestimo-formulario__etiqueta {
+  display: inline-block;
+
+  margin-bottom: 9px;
+
+  color: var(--cor-destaque);
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+}
+
+.emprestimo-formulario__header h2 {
+  color: var(--cor-primaria);
+
+  font-size: 23px;
+  font-weight: 750;
+
+  line-height: 1.3;
+}
+
+.emprestimo-formulario__header p {
+  margin-top: 7px;
+
+  color: var(--cor-texto-secundario);
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.emprestimo-formulario__fechar {
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 36px;
+  height: 36px;
+
+  color: var(--cor-texto-secundario);
+  background-color: var(--cor-branco);
+
+  border: 1px solid var(--cor-borda);
+  border-radius: 9px;
+
+  transition: all 0.2s ease;
+}
+
+.emprestimo-formulario__fechar:hover:not(:disabled) {
+  color: #b42318;
+
+  background-color: #fef2f0;
+
+  border-color: #f1c5be;
+}
+
+.emprestimo-formulario__fechar:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/*
+|--------------------------------------------------------------------------
+| CONTEÚDO
+|--------------------------------------------------------------------------
+*/
+
+.emprestimo-formulario__conteudo {
+  padding: 28px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| CAMPOS DO FORMULÁRIO
+|--------------------------------------------------------------------------
+*/
+
+.emprestimo-formulario__campo {
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+
+  margin-bottom: 23px;
+}
+
+.emprestimo-formulario__campo label {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  color: var(--cor-texto);
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.emprestimo-formulario__campo label svg {
+  color: var(--cor-destaque);
+}
+
+.emprestimo-formulario__campo label span {
+  color: #c0392b;
+
+  font-size: 14px;
+}
+
+.emprestimo-formulario__campo select,
+.emprestimo-formulario__campo input {
+  width: 100%;
+  height: 46px;
+
+  padding: 0 13px;
+
+  color: var(--cor-texto);
+  background-color: #ffffff;
+
+  border: 1px solid var(--cor-borda);
+  border-radius: 9px;
+
+  outline: none;
+
+  font-size: 13px;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.emprestimo-formulario__campo select {
+  cursor: pointer;
+}
+
+.emprestimo-formulario__campo select:focus,
+.emprestimo-formulario__campo input:focus {
+  border-color: var(--cor-destaque);
+
+  box-shadow: 0 0 0 3px rgba(56, 118, 83, 0.12);
+}
+
+.emprestimo-formulario__campo select:disabled,
+.emprestimo-formulario__campo input:disabled {
+  background-color: #f1f2ef;
+
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.emprestimo-formulario__campo input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+.emprestimo-formulario__campo small {
+  color: var(--cor-texto-secundario);
+
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/*
+|--------------------------------------------------------------------------
+| MENSAGEM DE ERRO
+|--------------------------------------------------------------------------
+*/
+
+.emprestimo-formulario__erro {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 10px;
+
+  margin-bottom: 22px;
+  padding: 13px 15px;
+
+  color: #a52a20;
+  background-color: #fff1ef;
+
+  border: 1px solid #f2c7c1;
+  border-radius: 9px;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.emprestimo-formulario__erro svg {
+  flex-shrink: 0;
+
+  margin-top: 1px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| AVISO DE AUSÊNCIA DE DADOS
+|--------------------------------------------------------------------------
+*/
+
+.emprestimo-formulario__aviso {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 13px;
+
+  padding: 18px;
+
+  color: #795b21;
+  background-color: #fff8e8;
+
+  border: 1px solid #eeddae;
+  border-radius: 10px;
+}
+
+.emprestimo-formulario__aviso svg {
+  flex-shrink: 0;
+
+  margin-top: 2px;
+}
+
+.emprestimo-formulario__aviso strong {
+  display: block;
+
+  margin-bottom: 5px;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.emprestimo-formulario__aviso p {
+  color: #876f42;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/*
+|--------------------------------------------------------------------------
+| RESUMO DO EMPRÉSTIMO
+|--------------------------------------------------------------------------
+*/
+
+.emprestimo-formulario__resumo {
+  margin-top: 4px;
+  margin-bottom: 25px;
+
+  padding: 15px;
+
+  background-color: #f1f5f0;
+
+  border: 1px solid #dce8dd;
+  border-radius: 10px;
+}
+
+.emprestimo-formulario__resumo > div {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 12px;
+}
+
+.emprestimo-formulario__resumo svg {
+  flex-shrink: 0;
+
+  margin-top: 2px;
+
+  color: var(--cor-destaque);
+}
+
+.emprestimo-formulario__resumo strong {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: var(--cor-primaria);
+
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.emprestimo-formulario__resumo p {
+  color: var(--cor-texto-secundario);
+
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/*
+|--------------------------------------------------------------------------
+| BOTÕES DE AÇÃO
+|--------------------------------------------------------------------------
+*/
+
+.emprestimo-formulario__acoes {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+
+  gap: 11px;
+
+  padding-top: 20px;
+
+  border-top: 1px solid var(--cor-borda);
+}
+
+.emprestimo-formulario__acoes button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  min-height: 42px;
+
+  padding: 0 17px;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  transition: all 0.2s ease;
+}
+
+.emprestimo-formulario__botao-cancelar {
+  color: var(--cor-texto);
+
+  background-color: #ffffff;
+
+  border: 1px solid var(--cor-borda);
+}
+
+.emprestimo-formulario__botao-cancelar:hover:not(:disabled) {
+  background-color: #f3f3ef;
+
+  border-color: #c9cec7;
+}
+
+.emprestimo-formulario__botao-salvar {
+  color: #ffffff;
+
+  background-color: var(--cor-primaria);
+
+  border: 1px solid var(--cor-primaria);
+}
+
+.emprestimo-formulario__botao-salvar:hover:not(:disabled) {
+  background-color: var(--cor-secundaria);
+
+  border-color: var(--cor-secundaria);
+
+  transform: translateY(-1px);
+
+  box-shadow: 0 4px 10px rgba(23, 61, 50, 0.15);
+}
+
+.emprestimo-formulario__acoes button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/*
+|--------------------------------------------------------------------------
+| CARREGAMENTO
+|--------------------------------------------------------------------------
+*/
+
+.emprestimo-formulario__carregando {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 14px;
+
+  min-height: 220px;
+
+  color: var(--cor-texto-secundario);
+
+  font-size: 13px;
+}
+
+.emprestimo-formulario__carregando svg {
+  color: var(--cor-destaque);
+}
+
+.girando {
+  animation: emprestimoGirar 1s linear infinite;
+}
+
+@keyframes emprestimoGirar {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| RESPONSIVIDADE
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 600px) {
+  .emprestimo-formulario__overlay {
+    align-items: flex-start;
+
+    padding: 14px;
+  }
+
+  .emprestimo-formulario {
+    max-width: 100%;
+
+    margin: auto 0;
+
+    border-radius: 13px;
+  }
+
+  .emprestimo-formulario__header {
+    padding: 22px 20px 19px;
+
+    gap: 12px;
+  }
+
+  .emprestimo-formulario__header h2 {
+    font-size: 20px;
+  }
+
+  .emprestimo-formulario__header p {
+    font-size: 12px;
+  }
+
+  .emprestimo-formulario__conteudo {
+    padding: 22px 20px;
+  }
+
+  .emprestimo-formulario__campo {
+    margin-bottom: 20px;
+  }
+
+  .emprestimo-formulario__acoes {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .emprestimo-formulario__acoes button {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 380px) {
+  .emprestimo-formulario__overlay {
+    padding: 9px;
+  }
+
+  .emprestimo-formulario__header {
+    padding: 19px 16px;
+  }
+
+  .emprestimo-formulario__conteudo {
+    padding: 19px 16px;
+  }
+
+  .emprestimo-formulario__header h2 {
+    font-size: 18px;
+  }
+
+  .emprestimo-formulario__campo select,
+  .emprestimo-formulario__campo input {
+    font-size: 12px;
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| ACESSIBILIDADE
+|--------------------------------------------------------------------------
+*/
+
+@media (prefers-reduced-motion: reduce) {
+  .emprestimo-formulario,
+  .emprestimo-formulario *,
+  .emprestimo-formulario__overlay {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

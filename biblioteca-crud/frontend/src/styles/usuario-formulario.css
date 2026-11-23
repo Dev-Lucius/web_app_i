@@ -1,0 +1,591 @@
+/*
+|--------------------------------------------------------------------------
+| FORMULÁRIO DE USUÁRIOS
+|--------------------------------------------------------------------------
+|
+| Estilização do modal responsável pelo cadastro e edição de leitores.
+|
+| Responsabilidades:
+|
+| - Overlay;
+| - Estrutura do modal;
+| - Cabeçalho;
+| - Campos do formulário;
+| - Ícones;
+| - Mensagens de validação;
+| - Avisos;
+| - Botões de ação;
+| - Responsividade.
+|
+|--------------------------------------------------------------------------
+*/
+
+/*
+|--------------------------------------------------------------------------
+| 1. OVERLAY
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(20, 34, 27, 0.55);
+  background-color: rgba(20, 30, 25, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: usuario-formulario-overlay 0.2s ease;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 2. MODAL
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__modal {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 560px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  position: relative;
+  z-index: 1;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 3. CABEÇALHO
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 23px 25px;
+
+  border-bottom: 1px solid var(--cor-borda);
+  background: #ffffff;
+}
+
+.usuario-formulario__header-info {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+}
+
+.usuario-formulario__icone {
+  width: 43px;
+  height: 43px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  background: #eaf2ec;
+  color: var(--cor-secundaria);
+}
+
+.usuario-formulario__header-info h2 {
+  color: var(--cor-texto);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.usuario-formulario__header-info p {
+  margin-top: 5px;
+
+  color: var(--cor-texto-secundario);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 4. BOTÃO FECHAR
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__fechar {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid transparent;
+  border-radius: 8px;
+
+  background: transparent;
+  color: var(--cor-texto-secundario);
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.usuario-formulario__fechar:hover {
+  background: #f4f5f2;
+  border-color: var(--cor-borda);
+  color: var(--cor-texto);
+}
+
+.usuario-formulario__fechar:focus-visible {
+  outline: 3px solid rgba(56, 118, 83, 0.2);
+  outline-offset: 2px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 5. FORMULÁRIO
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 21px;
+
+  padding: 25px;
+
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd4cb transparent;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 6. CAMPOS
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.usuario-formulario__campo label {
+  color: var(--cor-texto);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.usuario-formulario__campo label span {
+  color: #b75c54;
+  margin-left: 2px;
+}
+
+.usuario-formulario__campo small {
+  color: var(--cor-texto-secundario);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 7. WRAPPER DOS INPUTS
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__input-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 8. ÍCONES DOS INPUTS
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__input-icone {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #98a49a;
+
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+
+.usuario-formulario__input-wrapper:focus-within
+  .usuario-formulario__input-icone {
+  color: var(--cor-destaque);
+}
+
+/*
+|--------------------------------------------------------------------------
+| 9. INPUTS
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__input-wrapper input {
+  width: 100%;
+  height: 46px;
+
+  padding: 0 14px 0 43px;
+
+  border: 1px solid var(--cor-borda);
+  border-radius: 9px;
+
+  outline: none;
+
+  background: #ffffff;
+  color: var(--cor-texto);
+
+  font-family: inherit;
+  font-size: 13px;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.usuario-formulario__input-wrapper input::placeholder {
+  color: #a5ada6;
+}
+
+.usuario-formulario__input-wrapper input:hover {
+  border-color: #c9d2ca;
+}
+
+.usuario-formulario__input-wrapper input:focus {
+  border-color: var(--cor-destaque);
+  box-shadow: 0 0 0 3px rgba(56, 118, 83, 0.1);
+}
+
+.usuario-formulario__input-wrapper input:disabled {
+  background: #f5f6f3;
+  color: #929b94;
+  cursor: not-allowed;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 10. MENSAGEM DE ERRO
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__erro {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+
+  color: #b34f47;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.usuario-formulario__erro svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 11. AVISOS
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  padding: 12px 14px;
+
+  border: 1px solid #e6e8d5;
+  border-radius: 9px;
+
+  background: #fafaf1;
+  color: #796f43;
+
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.usuario-formulario__aviso svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #99864b;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 12. AÇÕES DO FORMULÁRIO
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__acoes {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+
+  padding-top: 5px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 13. BOTÃO CANCELAR
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__botao-cancelar {
+  min-width: 105px;
+  height: 42px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 16px;
+
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: var(--cor-texto-secundario);
+
+  font-size: 12px;
+  font-weight: 600;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.usuario-formulario__botao-cancelar:hover:not(:disabled) {
+  background: #f5f6f3;
+  border-color: #cfd6ce;
+  color: var(--cor-texto);
+}
+
+.usuario-formulario__botao-cancelar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 14. BOTÃO SALVAR
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__botao-salvar {
+  min-width: 145px;
+  height: 42px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 0 17px;
+
+  border: 1px solid var(--cor-primaria);
+  border-radius: 8px;
+
+  background: var(--cor-primaria);
+  color: var(--cor-branco);
+
+  font-size: 12px;
+  font-weight: 600;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.usuario-formulario__botao-salvar:hover:not(:disabled) {
+  background: var(--cor-secundaria);
+  border-color: var(--cor-secundaria);
+
+  box-shadow: 0 4px 12px rgba(23, 61, 50, 0.15);
+
+  transform: translateY(-1px);
+}
+
+.usuario-formulario__botao-salvar:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.usuario-formulario__botao-salvar:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.usuario-formulario__botao-salvar:focus-visible,
+.usuario-formulario__botao-cancelar:focus-visible {
+  outline: 3px solid rgba(56, 118, 83, 0.2);
+  outline-offset: 3px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 15. SPINNER DE CARREGAMENTO
+|--------------------------------------------------------------------------
+*/
+
+.usuario-formulario__spinner {
+  flex-shrink: 0;
+  animation: usuario-formulario-girar 0.9s linear infinite;
+}
+
+@keyframes usuario-formulario-girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| 16. ANIMAÇÕES DO MODAL
+|--------------------------------------------------------------------------
+*/
+
+@keyframes usuario-formulario-overlay {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes usuario-formulario-modal {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| 17. RESPONSIVIDADE - TABLETS
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 600px) {
+  .usuario-formulario__overlay {
+    padding: 16px;
+  }
+
+  .usuario-formulario__modal {
+    max-height: calc(100vh - 32px);
+    border-radius: 13px;
+  }
+
+  .usuario-formulario__header {
+    padding: 19px;
+  }
+
+  .usuario-formulario {
+    gap: 18px;
+    padding: 20px;
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| 18. RESPONSIVIDADE - CELULARES PEQUENOS
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 380px) {
+  .usuario-formulario__overlay {
+    padding: 10px;
+  }
+
+  .usuario-formulario__modal {
+    max-height: calc(100vh - 20px);
+  }
+
+  .usuario-formulario__header {
+    padding: 16px;
+  }
+
+  .usuario-formulario__header-info {
+    gap: 10px;
+  }
+
+  .usuario-formulario__icone {
+    width: 38px;
+    height: 38px;
+  }
+
+  .usuario-formulario__header-info h2 {
+    font-size: 15px;
+  }
+
+  .usuario-formulario {
+    padding: 17px;
+  }
+
+  .usuario-formulario__acoes {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .usuario-formulario__botao-cancelar,
+  .usuario-formulario__botao-salvar {
+    width: 100%;
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| 19. ACESSIBILIDADE
+|--------------------------------------------------------------------------
+*/
+
+@media (prefers-reduced-motion: reduce) {
+  .usuario-formulario__overlay,
+  .usuario-formulario__modal,
+  .usuario-formulario__spinner {
+    animation: none !important;
+  }
+
+  .usuario-formulario__input-wrapper input,
+  .usuario-formulario__botao-salvar,
+  .usuario-formulario__botao-cancelar,
+  .usuario-formulario__fechar {
+    transition: none !important;
+  }
+}

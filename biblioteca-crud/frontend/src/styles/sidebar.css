@@ -1,0 +1,240 @@
+/* ==========================================
+   SIDEBAR
+========================================== */
+
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+
+  display: flex;
+  flex-direction: column;
+
+  background-color: var(--cor-principal);
+  color: #ffffff;
+
+  transition: transform 0.3s ease;
+}
+
+/* ==========================================
+   CABEÇALHO / LOGO
+========================================== */
+
+.sidebar__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 28px 22px 24px;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar__identidade {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar__logo {
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background-color: #ffffff;
+  color: var(--cor-principal);
+
+  border-radius: 12px;
+}
+
+.sidebar__marca h1 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.sidebar__marca span {
+  display: block;
+  margin-top: 4px;
+
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 1.1px;
+
+  color: #b5c8bc;
+}
+
+.sidebar__fechar {
+  display: none;
+
+  border: none;
+  background: transparent;
+  color: #ffffff;
+}
+
+/* ==========================================
+   NAVEGAÇÃO
+========================================== */
+
+.sidebar__navegacao {
+  flex: 1;
+
+  padding: 28px 16px;
+
+  overflow-y: auto;
+}
+
+.sidebar__titulo {
+  display: block;
+
+  margin: 0 0 14px 10px;
+
+  color: #a6bbae;
+
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+}
+
+.sidebar__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  padding: 12px 14px;
+
+  border-radius: 10px;
+
+  color: #d0ded5;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.sidebar__link:hover {
+  background-color: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.sidebar__link--ativo {
+  background-color: var(--cor-secundaria);
+  color: #ffffff;
+
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.sidebar__link--ativo:hover {
+  background-color: var(--cor-secundaria);
+}
+
+/* ==========================================
+   RODAPÉ
+========================================== */
+
+.sidebar__rodape {
+  padding: 18px 16px 22px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar__perfil {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 10px 8px 18px;
+}
+
+.sidebar__avatar {
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background-color: #dce8df;
+  color: var(--cor-principal);
+}
+
+.sidebar__perfil-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar__perfil-info strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sidebar__perfil-info span {
+  font-size: 11px;
+  color: #b5c8bc;
+}
+
+.sidebar__logout {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 12px;
+
+  border: none;
+  border-radius: 10px;
+
+  background-color: transparent;
+  color: #d0ded5;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  transition: background-color 0.2s ease;
+}
+
+.sidebar__logout:hover {
+  background-color: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+/* ==========================================
+   RESPONSIVIDADE
+========================================== */
+
+@media (max-width: 768px) {
+  .sidebar__fechar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 36px;
+    height: 36px;
+
+    border-radius: 8px;
+  }
+
+  .sidebar__fechar:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+}

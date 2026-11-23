@@ -1,0 +1,210 @@
+/* ==========================================
+   DASHBOARD
+========================================== */
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ==========================================
+   APRESENTAÇÃO
+========================================== */
+
+.dashboard__apresentacao h1 {
+  font-size: 22px;
+  font-weight: 650;
+  color: var(--cor-principal);
+}
+
+.dashboard__apresentacao p {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--cor-texto-secundario);
+}
+
+/* ==========================================
+   ESTATÍSTICAS
+========================================== */
+
+.dashboard__estatisticas {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  min-width: 0;
+  padding: 22px;
+
+  background-color: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--radius-md);
+
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-card__conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.stat-card__titulo {
+  color: var(--cor-texto-secundario);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.stat-card__valor {
+  color: var(--cor-principal);
+  font-size: 28px;
+  font-weight: 650;
+}
+
+.stat-card__descricao {
+  color: var(--cor-texto-secundario);
+  font-size: 11px;
+}
+
+.stat-card__icone {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 11px;
+  background-color: #eaf1eb;
+  color: var(--cor-destaque);
+}
+
+.stat-card--alerta .stat-card__icone {
+  background-color: #f8f0e5;
+  color: var(--cor-alerta);
+}
+
+/* ==========================================
+   PAINÉIS
+========================================== */
+
+.dashboard__conteudo {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+}
+
+.dashboard__painel {
+  min-width: 0;
+  padding: 24px;
+
+  background-color: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--radius-md);
+
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard__painel h2 {
+  margin-bottom: 20px;
+
+  color: var(--cor-principal);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.dashboard__painel p {
+  color: var(--cor-texto-secundario);
+  font-size: 13px;
+}
+
+.dashboard__painel ul {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dashboard__painel li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.dashboard__painel li:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.dashboard__painel li strong {
+  color: var(--cor-texto);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.dashboard__painel li span {
+  color: var(--cor-texto-secundario);
+  font-size: 11px;
+  text-align: right;
+}
+
+/* ==========================================
+   ESTADOS
+========================================== */
+
+.dashboard__estado {
+  padding: 40px;
+  text-align: center;
+  color: var(--cor-texto-secundario);
+}
+
+.dashboard__estado--erro {
+  color: var(--cor-erro);
+}
+
+/* ==========================================
+   RESPONSIVIDADE
+========================================== */
+
+@media (max-width: 1100px) {
+  .dashboard__estatisticas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard__conteudo {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard__estatisticas {
+    gap: 12px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-card__valor {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 420px) {
+  .dashboard__estatisticas {
+    grid-template-columns: 1fr;
+  }
+}

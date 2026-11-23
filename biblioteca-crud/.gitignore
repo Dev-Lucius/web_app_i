@@ -1,0 +1,14 @@
+# Dependências
+**/node_modules/
+
+# Credenciais e configurações locais
+**/.env
+**/.env.*
+!**/.env.example
+
+# Builds e testes
+frontend/dist/
+backend/coverage/
+
+# Cliente Prisma gerado
+backend/src/generated/prisma/
