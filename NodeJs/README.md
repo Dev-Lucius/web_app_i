@@ -41,6 +41,29 @@ O ecossistema muda rápido. Antes de começar, estas são as versões-alvo usada
 - Exemplos em TypeScript assumem `strict: true` no `tsconfig.json`.
 - `await` de nível superior (*top-level await*) é usado livremente nos exemplos `.mjs`/ESM.
 
+### Versões mínimas do Node usadas nos exemplos
+
+O guia tem como alvo o **Node 24 (LTS)**, mas vários recursos usados nos snippets funcionam em versões
+anteriores. Rode `node --version` e compare:
+
+| Recurso | Versão mínima | Onde aparece |
+|---------|---------------|------------|
+| `--env-file` / `process.loadEnvFile()` | 20.6 | Módulo 2 |
+| `import.meta.filename` / `import.meta.dirname` | 20.11 | Módulos 1 e 3 |
+| `AbortSignal.any()` / `AbortSignal.timeout()` | 20.3 (estáveis no 22) | Módulo 3 |
+| `Promise.withResolvers()` | 22 | Módulo 3 |
+| `node:test` (runner estável) | 20 | Módulo 7 |
+| `--permission` (permission model) | 20+ (experimental — as flags variam por versão) | Módulo 6 |
+| `perf_hooks.monitorEventLoopDelay` | 12+ | Módulo 8 |
+
+### Como rodar os exemplos
+
+- **Pré-requisitos:** Node ≥ 22 (idealmente 24 LTS) e pnpm ≥ 10 (`corepack enable`).
+- Snippets `.mjs` rodam direto: `node ordem-event-loop.mjs`.
+- Snippets `.ts` assumem o `tsconfig.json` da seção 2.2 (`tsc` no build, `tsx` no desenvolvimento).
+- Snippets de teste assumem o `vitest.config.ts` da seção 7.2.
+- Portas, nomes de arquivo e URLs são ilustrativos; adapte ao seu projeto.
+
 ---
 
 ## Sumário
@@ -216,7 +239,7 @@ Ambas são **esvaziadas completamente** entre os callbacks. Por isso, uma recurs
 #### Exemplo 1 — ordem de execução (dentro de um callback de E/S)
 
 ```js
-// ordem-event-loop.mjs
+// ordem-event-loop.mjs — Requer Node ≥ 20.11 (import.meta.filename)
 import { readFile } from "node:fs";
 
 readFile(import.meta.filename, () => {
@@ -396,7 +419,7 @@ import Piscina from "piscina";
 import os from "node:os";
 
 export const pool = new Piscina({
-  filename: new URL("../workers/hash-pesado.js", import.meta.url).href, // arquivo JÁ compilado
+  filename: new URL("../workers/hash-pesado.js", import.meta.url).href, // arquivo JÁ compilado (rode o build antes — o Piscina não executa TypeScript)
   maxThreads: Math.max(1, os.availableParallelism() - 1),             // deixa 1 núcleo para o Event Loop
 });
 
@@ -687,6 +710,39 @@ Formas de carregar o `.env`:
 > Os números de versão são ilustrativos: use `pnpm add <pacote>` / `npm install <pacote>` para gravar as
 > versões atuais no seu projeto. Em produção, execute `node dist/server.js` (código **compilado**) — não use
 > `tsx` nem `ts-node` em produção.
+
+### `tsconfig.json` recomendado
+
+Todos os exemplos em TypeScript assumem esta configuração (ou equivalente):
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "sourceMap": true,
+    "declaration": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "tests"]
+}
+```
+
+> **`noUncheckedIndexedAccess`** é a razão dos `!` nos exemplos (`rows[0]!.id`): indexar arrays/records passa a
+> devolver `T | undefined`, forçando tratamento explícito — recomendado para produção. `module: NodeNext` exige
+> que imports relativos de arquivos TypeScript usem a extensão **`.js`** (ex.: `from "./pool.js"`): o compilador
+> mapeia para o `.ts` de origem e o JavaScript emitido funciona no Node sem bundler.
 
 ### `.npmrc` (npm) com guard-rails
 
@@ -1102,7 +1158,7 @@ export async function mapComLimite<T, R>(
 ### Timeout e cancelamento com `AbortSignal`
 
 ```js
-// fetch com timeout de 3s e cancelamento manual combinados
+// fetch com timeout de 3s e cancelamento manual combinados — Requer Node ≥ 20.3 (AbortSignal.any)
 const controlador = new AbortController();
 process.once("SIGTERM", () => controlador.abort());   // cancela se o processo for encerrado
 
@@ -1334,6 +1390,9 @@ try {
 O problema clássico: um *chunk* pode terminar no **meio de uma linha** (ou até no meio de um caractere
 multibyte). O `Transform` precisa guardar o "resto" entre chunks.
 
+> Arquivos **CRLF** (`\r\n`) também são seguros aqui: como a concatenação (`resto + chunk`) acontece *antes*
+> do `split(/\r?\n/)`, o par `\r\n` nunca fica separado por uma fronteira de chunk na hora de dividir.
+
 ```ts
 // src/streams/divisor-de-linhas.ts
 import { Transform, type TransformCallback } from "node:stream";
@@ -1495,9 +1554,10 @@ for await (const chunk of createReadStream("grande.txt")) linhas += contarLinhas
 console.log("stream    →", linhas, "linhas | RSS:", mb());               // RSS praticamente estável
 ```
 
-> Rode as duas partes **em processos separados** para uma medição limpa (a memória do `readFile` continua
-> reservada enquanto `tudo` estiver referenciado). O objetivo é ver a ordem de grandeza: ~tamanho do arquivo
-> versus dezenas de MB.
+> Rode as duas partes **em processos separados** para uma medição limpa — a memória do `readFile` continua
+> reservada enquanto `tudo` estiver referenciado (o V8 não devolve RSS ao sistema de imediato). Opção simples:
+> comente uma das partes e rode o script duas vezes (`node comparar-memoria.mjs`), anotando o RSS de cada modo.
+> O objetivo é a ordem de grandeza: ~tamanho do arquivo versus dezenas de MB estáveis.
 
 ### Stream 6 — Duplex e `PassThrough`
 
@@ -1614,6 +1674,10 @@ Os três resolvem o mesmo problema (receber HTTP, rotear, responder) com **filos
   opcionais usam `{/:id}`.
 - `req.query` passa a ser um *getter* (somente leitura): **não é possível reatribuí-lo** em middlewares de validação.
 - `req.body` é `undefined` (e não `{}`) quando nenhum *body parser* leu o corpo.
+
+> **Caveat do ecossistema:** muitos middlewares populares foram escritos para o Express 4. Antes de adotar o
+> Express 5 num projeto existente, valide as dependências de middleware (o guia oficial de migração mantém uma
+> lista de incompatibilidades conhecidas). Em projeto novo, o Express 5 é a escolha correta.
 
 ### Estruturando o projeto: MVC → camadas → Clean Architecture / DDD
 
@@ -2533,6 +2597,16 @@ const [emprestimo] = await prisma.$transaction([
   prisma.livro.update({ where: { id: livroId }, data: { disponivel: false } }),
 ]);
 
+// Para lógica ENTRE as operações (ou controle fino), use a forma interativa:
+await prisma.$transaction(async (tx) => {
+  await tx.livro.update({ where: { id: livroId, disponivel: true }, data: { disponivel: false } });
+  return tx.emprestimo.create({ data: { userId, livroId } });
+}, {
+  isolationLevel: "Serializable",   // nível de isolamento explícito
+  timeout: 5_000,                   // teto de duração da transação
+  maxWait: 2_000,                   // teto de espera para OBTER a conexão do pool
+});
+
 // SQL cru seguro (tagged template parametriza os valores)
 const ranking = await prisma.$queryRaw`SELECT "categoriaId", COUNT(*)::int AS total FROM livros GROUP BY 1 ORDER BY 2 DESC`;
 ```
@@ -2974,6 +3048,8 @@ export const verificarOrigem: RequestHandler = (req, _res, next) => {
   const referer = req.get("referer");
   const origem = req.get("origin") ?? (referer ? new URL(referer).origin : undefined);
 
+  // Origem AUSENTE = rejeitar (fail closed): navegadores modernos enviam Origin em todo método que
+  // altera estado; pedido legítimo sem Origin é a exceção e merece investigação, não passagem livre.
   if (!origem || !env.CORS_ORIGINS.includes(origem)) throw new ProibidoError("Origem não permitida");
   next();
 };
@@ -3010,3 +3086,1150 @@ node --permission --allow-fs-read=/app --allow-fs-write=/tmp dist/server.js
 ```
 
 ---
+## 6.2 (continuação) Parte 2: Autenticação e Autorização
+
+### Hashing de senhas com Argon2id
+
+| Abordagem | Problema |
+|-----------|----------|
+| MD5, SHA-1, SHA-256 "puro" | Projetados para serem **rápidos** — uma GPU moderna testa **bilhões** de senhas/segundo. Inaceitável para senhas. |
+| `Math.random()` para tokens | Não é criptograficamente seguro e é previsível. Use `crypto.randomBytes`. |
+| **Argon2id** | Vencedor da *Password Hashing Competition* (2015). Custoso em **memória** (resistente a GPU/ASIC) e em CPU. |
+| bcrypt | Alternativa aceitável e madura (limite de 72 bytes de entrada). |
+
+Os parâmetros do Argon2id são um **compromisso** entre resistência e custo por login: calibre para ~250–500 ms no
+seu servidor (mais memória/iterações = mais lento para o atacante também):
+
+```ts
+// src/seguranca/senhas.ts — pnpm add argon2 (pacote nativo; já está em onlyBuiltDependencies)
+import argon2 from "argon2";
+
+export async function hashSenha(senha: string): Promise<string> {
+  return argon2.hash(senha, {
+    type: argon2.argon2id,
+    memoryCost: 19_456,   // KiB ≈ 19 MiB
+    timeCost: 2,
+    parallelism: 1,
+  });
+}
+
+export async function verificarSenha(hashArmazenado: string, senha: string): Promise<boolean> {
+  try {
+    return await argon2.verify(hashArmazenado, senha);
+  } catch {
+    return false;   // hash corrompido não vaza erro nem derruba a rota
+  }
+}
+```
+
+> Hashing é propositalmente custoso (~0,3 s de CPU). Em login com tráfego normal isso é aceitável; em
+> **importação em massa** de usuários, mova o trabalho para uma fila (BullMQ) com workers dedicados — nunca um
+> `for` de `hashSenha` na requisição (Módulo 1).
+
+### Sessões: token opaco × JWT
+
+| | **Token opaco (aleatório)** | **JWT** |
+|---|---|---|
+| Formato | String aleatória (`crypto.randomBytes(48).toString("base64url")`) | JSON assinado (Base64URL) — **legível por qualquer um**, não criptografado |
+| Estado | Precisa de **lookup** (Redis/banco) a cada requisição | **Stateless**: a validade está dentro do token |
+| Revogação | **Imediata** (apaga do store) | Só na expiração — ou com deny-list adicional |
+| Tamanho | ~64 bytes | Centenas de bytes |
+| Uso típico | Sessões web com cookies | **Access tokens curtos** entre serviços/SPAs |
+
+Regras de ouro com JWT:
+
+- Assine com algoritmo forte (**HS256** com segredo de ≥ 32 bytes, ou **RS256/EdDSA** quando há múltiplos
+  emissores/verificadores). **Nunca aceite `alg: none`** — valide o algoritmo esperado explicitamente.
+- Defina e val **`exp`**, **`iss`** e **`aud`** em toda verificação.
+- O payload é **público** (Base64URL decodificável por qualquer um): nada de senhas, dados sensíveis ou
+  permissões que não possam vazar.
+- Access token **curto** (5–15 min). O que dura mais que isso precisa de estratégia de revogação.
+- Prefira a biblioteca **`jose`** (ESM-first, ativamente mantida, sem `Prototype`).
+
+### JWT access + refresh com **rotação** e detecção de reuso
+
+Padrão de produção para SPAs e apps mobile:
+
+```text
+login ──▶ access (15 min, vai no header Authorization) + refresh (30 dias, cookie HttpOnly)
+                │                                                         │
+   a cada requisição: assinatura + exp + iss + aud                    quando o access expira:
+                                                                      POST /auth/refresh
+                                                                          │ o refresh ANTERIOR é revogado
+                                                                          │ e um NOVO par é emitido
+                                                                          ▼
+   se um refresh JÁ USADO/REVOGADO aparecer de novo  ──▶  possível ROUBO: revoga a FAMÍLIA inteira
+```
+
+Guarde o refresh **em hash** (SHA-256) no banco: como o token é um bearer, vazar a tabela não deve vazar tokens
+válidos:
+
+```ts
+// src/seguranca/tokens.ts
+import { SignJWT, jwtVerify } from "jose";
+import { createHash, randomUUID } from "node:crypto";
+import { env } from "../config/env.js";
+
+const chave = new TextEncoder().encode(env.JWT_SECRET);
+export const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
+
+export interface AccessPayload { id: string; papel: string }
+
+export async function gerarAccessToken(usuario: AccessPayload): Promise<string> {
+  return new SignJWT({ papel: usuario.papel })
+    .setProtectedHeader({ alg: "HS256" })          // algoritmo FIXO — nunca negociado a partir do token
+    .setSubject(usuario.id)
+    .setIssuer("api-biblioteca")
+    .setAudience("app-biblioteca")
+    .setIssuedAt()
+    .setExpirationTime("15m")
+    .sign(chave);
+}
+
+/** Refresh = JWT separado, com jti (id único) e familiaId para rotação e revogação em massa. */
+export async function gerarRefreshToken(
+  usuarioId: string,
+  familiaId = randomUUID(),
+): Promise<{ token: string; jti: string; familiaId: string }> {
+  const jti = randomUUID();
+  const token = await new SignJWT({ typ: "refresh", familiaId })
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(usuarioId)
+    .setIssuer("api-biblioteca")
+    .setJti(jti)
+    .setExpirationTime("30d")
+    .sign(chave);
+  return { token, jti, familiaId };
+}
+
+export async function verificarRefreshToken(token: string) {
+  const { payload } = await jwtVerify(token, chave, { issuer: "api-biblioteca" });
+  if (payload.typ !== "refresh" || !payload.jti || !payload.sub || typeof payload.familiaId !== "string") {
+    throw new Error("Refresh token inválido");
+  }
+  return { usuarioId: payload.sub, jti: payload.jti, familiaId: payload.familiaId };
+}
+```
+
+```ts
+// src/seguranca/rotacao-refresh.ts — o caso de uso de POST /auth/refresh
+import { sha256, gerarAccessToken, gerarRefreshToken, verificarRefreshToken, type AccessPayload } from "./tokens.js";
+import { AppError } from "../erros/app-error.js";
+
+interface RefreshRepo {   // implementado na infra (tabela ou Redis)
+  registrar(jtiHash: string, familiaId: string, expiraEm: Date): Promise<void>;
+  marcarComoUsado(jtiHash: string): Promise<boolean>;   // false se não existe ou JÁ foi usado
+  revogarFamilia(familiaId: string): Promise<void>;
+  buscarUsuario(usuarioId: string): Promise<AccessPayload | null>;
+}
+
+export class RotacionarRefresh {
+  constructor(private readonly repo: RefreshRepo) {}
+
+  async executar(refreshToken: string) {
+    const dados = await verificarRefreshToken(refreshToken);   // lança se assinatura/exp inválidos
+    const jtiHash = sha256(dados.jti);
+
+    const ok = await this.repo.marcarComoUsado(jtiHash);
+    if (!ok) {
+      // Assinatura válida, mas jti JÁ usado ou revogado → reutilização = possível roubo
+      await this.repo.revogarFamilia(dados.familiaId);
+      throw new AppError("Sessão inválida. Faça login novamente.", { status: 401, codigo: "REFRESH_REUSADO" });
+    }
+
+    const usuario = await this.repo.buscarUsuario(dados.usuarioId);
+    if (!usuario) throw new AppError("Usuário inexistente", { status: 401 });
+
+    const novo = await gerarRefreshToken(usuario.id, dados.familiaId);   // MESMA família
+    await this.repo.registrar(sha256(novo.jti), novo.familiaId, new Date(Date.now() + 30 * 24 * 3600 * 1000));
+
+    return { accessToken: await gerarAccessToken(usuario), refreshToken: novo.token };
+  }
+}
+```
+
+### Login (com anti-enumeração e anti-timing)
+
+```ts
+// src/modules/auth/login.usecase.ts
+import { AppError } from "../../erros/app-error.js";
+import { hashSenha, verificarSenha } from "../../seguranca/senhas.js";
+import { gerarAccessToken, gerarRefreshToken, sha256 } from "../../seguranca/tokens.js";
+
+interface UsuarioRepo {
+  buscarPorEmail(email: string): Promise<{ id: string; papel: string; senhaHash: string } | null>;
+}
+
+export class Login {
+  constructor(
+    private readonly usuarios: UsuarioRepo,
+    private readonly refreshs: {
+      registrar(jtiHash: string, familiaId: string, expiraEm: Date): Promise<void>;
+    },
+  ) {}
+
+  async executar(email: string, senha: string) {
+    const usuario = await this.usuarios.buscarPorEmail(email);
+
+    // Mensagem GENÉRICA + hash fictício: sem revelar se o e-mail existe, e equalizando o TEMPO de resposta
+    // (senha só verificada em um dos ramos permite inferir "usuário existe" medindo a duração da resposta)
+    const hash = usuario?.senhaHash ?? (await hashSenha("senha-ficticia-para-equalizar-timing"));
+    const senhaOk = await verificarSenha(hash, senha);
+
+    if (!usuario || !senhaOk) {
+      throw new AppError("Credenciais inválidas", { status: 401, codigo: "CREDENCIAIS_INVALIDAS" });
+    }
+
+    const refresh = await gerarRefreshToken(usuario.id);
+    await this.refreshs.registrar(sha256(refresh.jti), refresh.familiaId, new Date(Date.now() + 30 * 24 * 3600 * 1000));
+
+    return {
+      accessToken: await gerarAccessToken({ id: usuario.id, papel: usuario.papel }),
+      refreshToken: refresh.token,
+    };
+  }
+}
+```
+
+```ts
+// src/modules/auth/auth.controller.ts — o refresh vai em cookie, NÃO no body da resposta
+router.post("/login", limiteLogin, async (req, res) => {
+  const { email, senha } = loginSchema.parse(req.body);
+  const { accessToken, refreshToken } = await login.executar(email, senha);
+
+  res.cookie("refresh_token", refreshToken, {
+    httpOnly: true,                         // JavaScript não lê — mitiga roubo por XSS
+    secure: env.NODE_ENV === "production",  // só via HTTPS
+    sameSite: "lax",                        // primeira barreira contra CSRF
+    path: "/auth",                          // cookie só é enviado às rotas de autenticação
+    maxAge: 30 * 24 * 3600 * 1000,
+  });
+  res.json({ accessToken });                // o access fica em memória no client (nunca em localStorage)
+});
+```
+
+### Middleware de autenticação e autorização (RBAC + dono do recurso)
+
+```ts
+// src/seguranca/autenticacao.ts
+import type { RequestHandler } from "express";
+import { jwtVerify } from "jose";
+import { env } from "../config/env.js";
+import { NaoAutorizadoError, ProibidoError } from "../erros/app-error.js";
+
+declare module "express-serve-static-core" {
+  interface Locals { usuario: { id: string; papel: string } }
+}
+
+const chave = new TextEncoder().encode(env.JWT_SECRET);
+
+/** Autentica: valida o Bearer token e popula res.locals.usuario */
+export const autenticar: RequestHandler = async (req, res, next) => {
+  const header = req.get("authorization");
+  const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
+  if (!token) return next(new NaoAutorizadoError("Token ausente"));
+
+  try {
+    const { payload } = await jwtVerify(token, chave, {
+      issuer: "api-biblioteca",
+      audience: "app-biblioteca",
+    });
+    if (!payload.sub) throw new Error("sub ausente");
+    res.locals.usuario = { id: payload.sub, papel: String(payload.papel) };
+    next();
+  } catch {
+    next(new NaoAutorizadoError("Token inválido ou expirado"));
+  }
+};
+
+/** Autoriza por papel (RBAC) */
+export const exigirPapel = (...papeis: string[]): RequestHandler => (_req, res, next) => {
+  if (!papeis.includes(res.locals.usuario?.papel)) return next(new ProibidoError());
+  next();
+};
+
+// uso:
+// router.get("/admin/relatorios", autenticar, exigirPapel("admin", "bibliotecario"), handler);
+```
+
+```ts
+// Autorização por DONO do recurso — fecha IDOR/BOLA (A01):
+// ❌ GET /pedidos/:id → devolve o pedido SEM checar dono: basta trocar o id para ler o pedido de outro usuário
+// ✅
+router.get("/pedidos/:id", autenticar, async (req, res) => {
+  const pedido = await pedidosService.buscar(req.params.id);
+  if (!pedido) throw new NaoEncontradoError("Pedido", req.params.id);
+  if (pedido.usuarioId !== res.locals.usuario.id && res.locals.usuario.papel !== "admin") {
+    throw new ProibidoError();     // 403, não 404: "existe" é diferente de "você pode ver"
+  }
+  res.json(pedido);
+});
+```
+
+> **A regra de ouro (A01 — Broken Access Control):** a autorização acontece **no servidor, em toda rota**, usando
+> o id que veio do **token** (`res.locals.usuario`), nunca um `usuarioId` enviado no corpo/query da requisição.
+
+## 6.3 Dicas de Ouro / Anti-patterns
+
+**✅ Faça**
+
+- **Negar por padrão:** rotas nascem fechadas; autenticação/autorização aplicada por padrão (middleware em cada
+  rota ou grupo), nunca "lembrar de adicionar depois".
+- Senhas com **Argon2id** calibrado (~250–500 ms); tokens aleatórios com `crypto.randomBytes` (≥ 32 bytes).
+- Access tokens **curtos** (5–15 min) + refresh com **rotação** e **detecção de reuso** (revoga a família).
+- Refresh token em cookie **`HttpOnly; Secure; SameSite`** e **gravado em hash** no servidor.
+- Validar `exp`, `iss`, `aud` **e o algoritmo** de todo JWT; segredo de ≥ 32 bytes em gerenciador de segredos.
+- Autorização **por dono do recurso** em toda rota que acessa um objeto por id (IDOR/BOLA).
+- Rate limit **específico** em login, cadastro, recuperação de senha e endpoints caros; `trust proxy` correto.
+- Logs de segurança (login ok/falha, refresh reusado, 403, troca de senha) com **`pino` + redact** e alertas.
+- CSRF: `SameSite` + verificação de `Origin` quando a autenticação é por cookie.
+- Headers com **Helmet**, CORS com **allow-list**, corpo com **limite de tamanho**, timeouts no servidor.
+
+**❌ Nunca faça**
+
+- Senha com MD5/SHA-1/SHA-256 "puro"; token com `Math.random()`; JWT com `alg: none` ou algoritmo aceito a
+  partir do header do próprio token.
+- Access token de dias/semanas "para não precisar de refresh".
+- Guardar refresh token **em claro** no banco; rotacionar sem revogar o anterior.
+- Confiar em `userId` vindo do corpo/query da requisição; esquecer a checagem de dono em rota por id.
+- Respostas (ou tempos de resposta) diferentes para "usuário não existe" vs "senha errada".
+- Desligar rate limit "porque tem WAF na frente" — o WAF não conhece a sua lógica de negócio.
+- Expor `--inspect` em `0.0.0.0` em produção; rodar o contêiner como root; commitar segredos (o histórico do
+  Git é permanente — segredo commitado é segredo comprometido, mesmo que apagado depois).
+- Logar tokens, senhas ou o header `Authorization` (configure o `redact` do pino).
+- Capturar erro de autenticação e **continuar** como usuário anônimo por conveniência (falhar aberto).
+
+---
+
+# Módulo 7: Testes, Qualidade de Código e CI/CD
+
+## 7.1 Conceito Teórico
+
+### O que testar (e o que não testar) em Node
+
+A **pirâmide de testes** se conecta diretamente à arquitetura em camadas dos Módulos 4 e 5:
+
+| Camada | Tipo de teste | Custo/velocidade | Exemplo |
+|--------|---------------|------------------|---------|
+| Domínio (entidades, value objects, regras) | **Unitário** | milissegundos | `Emprestimo.devolver()` lança `ConflitoError` quando já devolvido |
+| Casos de uso (com fakes de repositório) | **Unitário** | milissegundos | `EmprestarLivro` compensa a reserva quando `salvar` falha |
+| HTTP + serialização + validação | **Integração** | segundos | `POST /livros` com body inválido → 400; com token → 201 |
+| Persistência real (SQL, transações, concorrência) | **Integração** | segundos (Testcontainers) | `emprestar()` é atômico: só um vencedor sob concorrência |
+| Fluxo completo (login → criar → listar) | **E2E** | minutos | poucos, cobrindo só os caminhos críticos |
+
+**O que NÃO vale a pena testar:** getters do framework, código gerado (Prisma Client), configuração de
+biblioteca de terceiros. **O que vale:** regras de negócio, tratamento de erro e as fronteiras (validação,
+serialização, transações, concorrência).
+
+### `node:test` nativo × Vitest
+
+| | **`node:test`** | **Vitest** |
+|---|---|---|
+| Instalação | **Nenhuma** (vem no runtime) | `pnpm add -D vitest` |
+| Execução | `node --test` | runner próprio (watch muito rápido) |
+| API | `describe/it`, `assert`, mocks básicos | compatível com a API do Jest (`vi.fn`, `vi.mock`) |
+| Cobertura | nativa (`--experimental-test-coverage`) | integrada (`--coverage`, provider v8) |
+| TypeScript | rode com `tsx --test` | nativo (via esbuild) |
+| Ecossistema | mínimo | UI, snapshots, integrações, plugin de ESLint |
+
+> **Recomendação prática:** scripts e projetos pequenos → `node:test`. Projetos de equipe com TS → **Vitest**
+> (poucas dependências cobrem quase tudo). Conhecer o `node:test` mesmo assim é útil: é a "bateria mínima"
+> disponível em qualquer máquina com Node.
+
+### Mocks, stubs e fakes — e por que injeção de dependência importa
+
+| Dublê | O que é | Quando usar |
+|-------|---------|-------------|
+| **Fake** | Implementação real mas simplificada (repo em memória) | **Padrão para casos de uso** — rápido, sem framework de mock |
+| **Stub** | Resposta programada para uma chamada | Forçar cenários de erro de um gateway externo |
+| **Mock** | Objeto com expectativas sobre como foi chamado | Verificar interações — com parcimônio (testa implementação, não comportamento) |
+| **Spy** | Envolve o objeto real e registra chamadas | Contar chamadas sem alterar comportamento |
+
+O **composition root** do Módulo 4 é o que torna tudo isso barato: o caso de uso depende de
+`EmprestimoRepository` (**interface**), então o teste passa uma implementação em memória — sem mockar módulo,
+sem banco, sem HTTP.
+
+### Testes de integração com **Testcontainers**
+
+Testar contra um PostgreSQL **real** (e não um mock de driver) pega erros que só existem no SQL real:
+constraints, tipos, transações, locks. **Testcontainers** sobe um contêiner Docker efêmero no início da suíte e
+derruba no fim — mesmo banco da produção, isolado por execução, descartável. Cuidado com a alternativa "banco
+em memória" (SQLite): ele **não valida** o que é específico do Postgres (`RETURNING`, tipos, locking, `jsonb`).
+
+### Cobertura: alvo e limites
+
+- Cobertura é **ferramenta para localizar buracos**, não meta cega: 100% com testes fracos vale menos que 80%
+  com bons testes.
+- Faixas sensatas: **domínio/casos de uso ≥ 90%**, HTTP/infra conforme o valor de negócio.
+- Configure *thresholds* no CI para não **regredir** — e revise o relatório em vez de escrever teste inútil só
+  para subir o número.
+
+### Qualidade automatizada no fluxo de trabalho
+
+```text
+git push ─▶ CI: pnpm install --frozen-lockfile
+            ├─ lint (ESLint)           ← floating promises, imports, más práticas (Módulo 3)
+            ├─ typecheck (tsc --noEmit) ← tipos quebrados, sem emitir nada
+            ├─ test (vitest + coverage) ← comportamento
+            └─ build (tsc)              ← o artefato final é válido
+```
+
+- **ESLint 9 (flat config):** `eslint.config.js`, com `typescript-eslint` recomendado + as regras que dão
+  suporte aos Módulos 3 e 4 (`no-floating-promises`, `no-misused-promises`).
+- **Prettier** para formatação; **lint-staged + husky** para validar só o que mudou, antes do commit.
+- **Conventional Commits** (opcional) habilita changelog e versionamento automáticos.
+
+## 7.2 Exemplos de Código Prático
+
+### 1. Teste unitário de domínio (Vitest e node:test)
+
+```ts
+// tests/unit/emprestimo.test.ts — Vitest
+import { describe, expect, it } from "vitest";
+import { Emprestimo } from "../../src/modules/emprestimos/domain/emprestimo.js";
+import { ConflitoError } from "../../src/shared/erros/app-error.js";
+
+describe("Emprestimo", () => {
+  it("devolve e registra a data", () => {
+    const e = Emprestimo.novo("u1", "l1", new Date("2026-01-01"));
+    e.devolver(new Date("2026-01-15"));
+    expect(e.devolvido).toBe(true);
+    expect(e.devolvidoEm?.toISOString()).toBe("2026-01-15T00:00:00.000Z");
+  });
+
+  it("lança ConflitoError se já devolvido", () => {
+    const e = Emprestimo.novo("u1", "l1");
+    e.devolver();
+    expect(() => e.devolver()).toThrow(ConflitoError);
+  });
+});
+```
+
+```js
+// test/emprestimo.test.mjs — o MESMO teste com o runner nativo
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+describe("Emprestimo", () => {
+  it("lança ConflitoError se já devolvido", async () => {
+    const { Emprestimo } = await import("../src/modules/emprestimos/domain/emprestimo.js");
+    const e = Emprestimo.novo("u1", "l1");
+    e.devolver();
+    assert.throws(() => e.devolver(), /Empréstimo já devolvido/);
+  });
+});
+// rode:  node --test   (em TS:  pnpm dlx tsx --test test/*.test.ts)
+```
+
+### 2. Caso de uso com repositórios em memória (fake)
+
+```ts
+// tests/unit/emprestar-livro.test.ts
+import { describe, expect, it } from "vitest";
+import { EmprestarLivro } from "../../src/modules/emprestimos/application/emprestar-livro.usecase.js";
+import type { EmprestimoRepository, LivroGateway } from "../../src/modules/emprestimos/domain/repositorios.js";
+import { ConflitoError } from "../../src/shared/erros/app-error.js";
+
+function montar(cenario: { reservarOk: boolean; falharAoSalvar?: boolean }) {
+  // FAKES: implementações reais de propósito, controladas pelo teste
+  const reservados = new Set<string>();
+  const salvos: unknown[] = [];
+
+  const emprestimos: EmprestimoRepository = {
+    async salvar(e) {
+      if (cenario.falharAoSalvar) throw new Error("banco fora do ar");
+      salvos.push(e);
+    },
+    async buscarPorId() { return null; },
+  };
+  const livros: LivroGateway = {
+    async reservar(id) { if (!cenario.reservarOk) return false; reservados.add(id); return true; },
+    async liberar(id) { reservados.delete(id); },
+  };
+
+  return { caso: new EmprestarLivro(emprestimos, livros), reservados, salvos };
+}
+
+describe("EmprestarLivro", () => {
+  it("reserva, salva e devolve o id", async () => {
+    const { caso, reservados, salvos } = montar({ reservarOk: true });
+    const r = await caso.executar({ usuarioId: "u1", livroId: "l1" });
+    expect(r.id).toBeTruthy();
+    expect(reservados.has("l1")).toBe(true);
+    expect(salvos).toHaveLength(1);
+  });
+
+  it("falha com ConflitoError quando o livro está indisponível", async () => {
+    const { caso } = montar({ reservarOk: false });
+    await expect(caso.executar({ usuarioId: "u1", livroId: "l1" })).rejects.toThrow(ConflitoError);
+  });
+
+  it("LIBERA a reserva se a persistência falhar (compensação)", async () => {
+    const { caso, reservados } = montar({ reservarOk: true, falharAoSalvar: true });
+    await expect(caso.executar({ usuarioId: "u1", livroId: "l1" })).rejects.toThrow("banco fora do ar");
+    expect(reservados.has("l1")).toBe(false);   // nada fica preso
+  });
+});
+```
+
+### 3. Teste HTTP com **Supertest** (app injetável)
+
+O segredo é **não escutar porta** nos testes: exporte a `app` pronta e deixe o `server.ts` como o único lugar
+que chama `.listen()`:
+
+```ts
+// src/app.ts — fábrica de app, sem .listen()
+export function criarApp(deps: Deps) {
+  const app = express();
+  aplicarSeguranca(app);
+  app.use("/livros", criarLivrosRouter(deps));
+  app.use(rotaNaoEncontrada);
+  app.use(tratadorDeErros);
+  return app;
+}
+```
+
+```ts
+// tests/integration/livros.test.ts
+import { describe, expect, it } from "vitest";
+import request from "supertest";
+import { criarApp } from "../../src/app.js";
+
+const app = criarApp({ livrosRepo: repoDeTeste });   // mesma app da produção, deps de teste
+
+describe("POST /livros", () => {
+  it("400 com detalhes por campo quando o body é inválido", async () => {
+    const res = await request(app).post("/livros").send({ titulo: "" });
+    expect(res.status).toBe(400);
+    expect(res.body.title).toBe("Dados inválidos");
+    expect(res.body.errors.titulo).toBeDefined();
+  });
+
+  it("201 + Location quando válido e autenticado", async () => {
+    const res = await request(app)
+      .post("/livros")
+      .set("Authorization", `Bearer ${tokenValido()}`)
+      .send({ titulo: "Dom Casmurro", isbn: "9781234567890", anoPublicacao: 1899, categoriaId: "c1" });
+    expect(res.status).toBe(201);
+    expect(res.headers.location).toMatch(/^\/livros\//);
+  });
+});
+```
+
+> No **Fastify**, use `app.inject()` (mesma ideia, sem supertest); no **NestJS**,
+> `Test.createTestingModule(...)` + supertest com `app.getHttpServer()`.
+
+### 4. Integração com banco real via **Testcontainers**
+
+```ts
+// tests/integration/emprestimos.db.test.ts
+import { describe, expect, it, beforeAll, afterAll } from "vitest";
+import { PostgreSqlContainer } from "@testcontainers/postgresql";
+import { pool } from "../../src/db/pool.js";
+import { livrosRepository } from "../../src/modules/livros/livros.repository.js";
+// ajuste: faça o pool aceitar connectionString dinâmica; rode as migrations no beforeAll
+
+let container: PostgreSqlContainer;
+
+beforeAll(async () => {
+  container = await new PostgreSqlContainer("postgres:16-alpine").start();
+  process.env.DATABASE_URL = container.getConnectionUri();
+  // await rodarMigrations(process.env.DATABASE_URL);
+}, 60_000);
+
+afterAll(async () => {
+  await pool.end();
+  await container.stop();
+});
+
+it("emprestar é atômico sob concorrência: exatamente UM vencedor", async () => {
+  const id = await inserirLivro({ disponivel: true });
+  const [r1, r2] = await Promise.all([
+    livrosRepository.emprestar(id, "u1"),
+    livrosRepository.emprestar(id, "u2"),
+  ]);
+  expect([r1, r2].filter(Boolean)).toHaveLength(1);   // o UPDATE condicional garante isso
+});
+```
+
+> O CI precisa de Docker disponível (no GitHub Actions, `ubuntu-latest` já tem). Local: Docker Desktop ou
+> podman com socket compatível. Reutilize o container entre arquivos de teste para não pagar o *startup* em
+> cada suíte.
+
+### 5. Configuração do Vitest com cobertura
+
+```ts
+// vitest.config.ts
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    environment: "node",
+    include: ["tests/**/*.test.ts"],
+    testTimeout: 10_000,
+    hookTimeout: 60_000,              // Testcontainers precisa de tempo para subir
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov"],
+      include: ["src/modules/**", "src/shared/erros/**"],
+      thresholds: { statements: 80, branches: 75, functions: 80, lines: 80 },  // não regredir
+    },
+  },
+});
+```
+
+### 6. ESLint 9 (flat config) com as regras do guia
+
+```js
+// eslint.config.js
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+
+export default tseslint.config(
+  { ignores: ["dist", "coverage", "node_modules"] },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    rules: {
+      // as regras que transformam os erros clássicos do Módulo 3 em erro de compilação:
+      "@typescript-eslint/no-floating-promises": "error",     // Promise sem await/catch
+      "@typescript-eslint/no-misused-promises": "error",      // Promise onde se esperava void
+      "@typescript-eslint/consistent-type-imports": ["warn", { fixStyle: "inline-type-imports" }],
+      "no-console": ["warn", { allow: ["warn", "error"] }],
+    },
+  },
+);
+```
+
+### 7. Pipeline de CI (GitHub Actions)
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push: { branches: [main] }
+  pull_request:
+
+jobs:
+  qualidade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false               # controlamos abaixo para usar o lockfile congelado
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc        # MESMA versão do projeto (Módulo 2)
+          cache: pnpm
+
+      - name: Instalar dependências (congelado)
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Testes + cobertura
+        run: pnpm test:cov
+
+      - name: Build
+        run: pnpm build
+
+      - name: Audit de dependências
+        run: pnpm audit --audit-level=high     # falha em high/critical (Módulo 2)
+```
+
+Princípios do pipeline: **rápido** (cache do pnpm), **determinístico** (lockfile congelado, versão do Node do
+`.nvmrc`) e **falha cedo** (lint e typecheck antes dos testes). O deploy entra como job dependente deste —
+veja a seção 8.2 (item 8).
+
+## 7.3 Dicas de Ouro / Anti-patterns
+
+**✅ Faça**
+
+- Estruture para testabilidade: **app injetável** (sem `.listen()` no módulo de rotas), dependências por
+  interface, composition root separado (Módulo 4).
+- Teste o **comportamento** ("devolve 409 quando indisponível"), não a implementação ("chamou o método X").
+- Use **fakes** para casos de uso; reserve mocks para fronteiras externas (gateways, relógio — `vi.useFakeTimers()`).
+- Suba o **banco real** em testes de persistência (Testcontainers) — mock de driver esconde bugs de SQL.
+- Teste o **caminho de erro**: compensação, rollback, timeout, 401 vs 403, payload inválido.
+- `no-floating-promises` e `no-misused-promises` ativos no ESLint — pegam o erro nº 1 do Módulo 3 em tempo de
+  desenvolvimento.
+- **Thresholds de cobertura no CI** para não regredir; revise o relatório em vez de perseguir 100%.
+- Testes determinísticos: cada teste cria e limpa o próprio estado; nada de dados compartilhados.
+- Rode o CI no **Node da versão-alvo** (`.nvmrc`); para bibliotecas públicas, numa matriz (ex.: 22 e 24).
+
+**❌ Nunca faça**
+
+- Testar chamando a API **em porta aberta** nos testes (supertest/inject — mais rápido e sem flaky).
+- Mockar o que você **possui** (repositório do seu domínio) — um fake real é melhor e mais barato.
+- Depender de estado deixado por outro teste ("passa na suíte inteira, falha sozinho").
+- `setTimeout` real para testar lógica temporal — use `vi.useFakeTimers()`.
+- Desligar/commitar `.skip` em teste *flaky* em vez de consertar a race condition — flaky test vira teste
+  ignorado, e o bug volta no pior momento.
+- `Math.random()`/`new Date()` soltos em código de domínio sem abstração (clock aleatório/injetável) — torna o
+  teste não determinístico.
+- Achar que cobertura 100% == sem bugs, ou que E2E substitui unitário.
+- Comitar código que quebra o build "porque o fix vem depois" — o CI existe justamente para isso.
+
+---
+
+# Módulo 8: Performance, Observabilidade e Deploy
+
+## 8.1 Conceito Teórico
+
+### Medir antes de otimizar
+
+Performance sem medição é adivinhação. Três perguntas antes de qualquer otimização:
+
+1. **Qual o problema?** Latência alta em qual percentil (p50/p95/p99)? Throughput baixo? CPU/memória altas?
+2. **Onde está?** No Event Loop (lag alto)? No banco (queries lentas — Módulo 5)? Em chamadas externas?
+3. **Vale o custo?** Otimizar o que não é gargalo só adiciona complexidade.
+
+| Métrica | O que mede | Ferramenta |
+|---------|-----------|------------|
+| **Event Loop lag** | atraso entre agendar e executar — o termômetro nº 1 do Node | `perf_hooks.monitorEventLoopDelay` |
+| **Latência/throughput sob carga** | req/s, p95/p99 — antes e depois de mudanças | `autocannon`, `k6` |
+| **Diagnóstico de CPU/memória** | onde o processo passa tempo; vazamentos | `clinic doctor`, heap snapshots (Módulo 5) |
+| **Métricas de runtime** | GC, handles, heap em série temporal | `--trace-gc`, APM, Prometheus |
+
+> Regra prática: **p95/p99 importam mais que a média**. Uma API com média de 40 ms e p99 de 3 s está
+> **travando usuários reais** — provavelmente Event Loop bloqueado ou queries ocasionais lentas.
+
+### Os três pilares da observabilidade
+
+| Pilar | Pergunta que responde | Implementação típica |
+|-------|------------------------|----------------------|
+| **Logs** | "o que aconteceu, em que ordem, com que contexto?" | `pino` (estruturado, JSON, `redact`) + correlation ID |
+| **Métricas** | "quantos/quanto/quão rápido, agregado no tempo?" | `prom-client` + Prometheus/Grafana (RED: Rate, Errors, Duration) |
+| **Traces** | "por que ESTA requisição demorou 2 s?" | OpenTelemetry → Jaeger/Tempo |
+
+Sem os três, um incidente às 3h vira adivinhação. O **correlation ID** (`traceId` do Módulo 4) amarra tudo:
+o log carrega o ID, o trace carrega o ID, a métrica é agregada por rota.
+
+### Health checks: liveness × readiness
+
+O orquestrador (Docker/Kubernetes) precisa responder **duas perguntas diferentes**:
+
+| | Liveness (`/health`) | Readiness (`/ready`) |
+|---|---|---|
+| Pergunta | "o processo está vivo (não travou/deadlock)?" | "pode receber tráfego agora (banco/fila acessíveis)?" |
+| Checagem | Barata: o Event Loop responde | Dependências críticas: banco, cache, fila |
+| Se falhar | **Reinicia** o processo | **Tira do balanceador** (sem reiniciar) |
+| Erro clássico | Checar o banco no liveness → reinício em cascata quando o banco cai | Não ter readiness → tráfego chega antes da app estar pronta |
+
+### Deploy: artefato, contêiner e processo
+
+Princípios:
+
+1. **O mesmo artefato** (imagem Docker) roda em dev/hom/prod — configuração só por ambiente (Módulo 2).
+2. **Build multi-stage:** estágio de build (com devDependencies) → estágio final mínimo (só produção).
+3. **Imagem final pequena e dura:** Alpine ou **distroless** (sem shell — superfície de ataque menor), usuário
+   **não-root**, dependências instaladas com lockfile congelado e sem devDependencies.
+4. **Um processo por contêiner, contêiner efêmero:** estado em armazenamento externo; subir e derrubar é barato.
+5. **Graceful shutdown (Módulos 3 e 4) + janela de término:** o orquestrador manda SIGTERM, espera N segundos
+   (`terminationGracePeriodSeconds`), manda SIGKILL — a aplicação precisa terminar as requisições e fechar os
+   pools nessa janela.
+
+### PM2, Docker ou Kubernetes?
+
+| Opção | Quando faz sentido |
+|-------|---------------------|
+| **PM2 / cluster** | VM ou bare metal sem orquestrador; app legado; um servidor só |
+| **Docker + Compose** | 1–2 servidores, homologação, ambientes simples |
+| **Kubernetes** | Muitas réplicas, deploys frequentes, auto-scaling, dezenas de serviços |
+
+O Node em si é o mesmo nas três opções — a diferença é **quem** cuida de reiniciar, escalar e distribuir tráfego.
+
+## 8.2 Exemplos de Código Prático
+
+### 1. Medindo o *lag* do Event Loop em produção
+
+```ts
+// src/infra/lag-do-event-loop.ts
+import { monitorEventLoopDelay } from "node:perf_hooks";
+import { logger } from "./logger.js";
+
+const histograma = monitorEventLoopDelay({ resolution: 20 });
+
+export function iniciarMedicaoDeLag() {
+  histograma.enable();
+  setInterval(() => {
+    const p99Ms = histograma.percentile(99) / 1e6;
+    logger.info({
+      evento: "event_loop_lag",
+      p99Ms: +p99Ms.toFixed(1),
+      meanMs: +(histograma.mean / 1e6).toFixed(1),
+      maxMs: +(histograma.max / 1e6).toFixed(1),
+    });
+    histograma.reset();
+    // Alerte (pager/SLO burn) quando p99 sustentado > ~100 ms: é o sintoma do Módulo 1 em produção
+  }, 30_000).unref();
+}
+```
+
+### 2. Carga sintética com `autocannon`
+
+```bash
+pnpm add -D autocannon
+
+# 100 conexões por 30 s contra a rota de leitura
+npx autocannon -c 100 -d 30 http://localhost:3000/livros
+
+# saída (exemplo ilustrativo):
+# ┌─────────┬──────┬──────┬───────┬────────┬──────────┐
+# │ Stat    │ 2.5% │ 50%  │ 97.5% │ 99%    │ Avg      │
+# ├─────────┼──────┼──────┼───────┼────────┼──────────┤
+# │ Latency │ 4 ms │ 9 ms │ 87 ms │ 210 ms │ 15.2 ms  │
+# └─────────┴──────┴──────┴───────┴────────┴──────────┘
+# ~3.000 req/s
+```
+
+Como ler: `97.5%/99%` altos com média baixa = filas ocasionais (GC, query lenta, loop preso). Rode **antes e
+depois** de cada otimização, na mesma máquina, no mesmo cenário — senão não é comparação, é horóscopo.
+
+### 3. Request logging com correlation ID (`pino-http`)
+
+```ts
+// src/infra/request-logger.ts
+import { pinoHttp } from "pino-http";
+import { randomUUID } from "node:crypto";
+import { logger } from "./logger.js";
+
+export const requestLogger = pinoHttp({
+  logger,
+  genReqId: (req, res) => {
+    const existente = req.headers["x-request-id"];
+    const id = typeof existente === "string" ? existente : randomUUID();
+    res.setHeader("x-request-id", id);          // cliente e ops conseguem correlacionar também
+    return id;
+  },
+  // loga método, url, status e duração de cada requisição automaticamente
+});
+
+// app.use(requestLogger) ── logo no início, antes das rotas (Módulo 4).
+// Em chamadas externas, PROPAGUE o ID:  fetch(url, { headers: { "x-request-id": idAtual } })
+```
+
+### 4. Liveness e readiness
+
+```ts
+// src/infra/saude.ts
+import type { Express } from "express";
+import type pg from "pg";
+
+export function registrarSaude(app: Express, pool: pg.Pool) {
+  // Liveness: barato — se o Event Loop responde, o processo está vivo
+  app.get("/health", (_req, res) => res.json({ status: "ok" }));
+
+  // Readiness: as dependências críticas precisam estar acessíveis para receber tráfego
+  app.get("/ready", async (_req, res) => {
+    try {
+      await pool.query("SELECT 1");
+      res.json({ status: "ready" });
+    } catch {
+      res.status(503).json({ status: "not_ready" });   // o balanceador tira a instância do tráfego
+    }
+  });
+}
+```
+
+### 5. Métricas com `prom-client` (formato Prometheus)
+
+```ts
+// src/infra/metricas.ts
+import client from "prom-client";
+import type { Express, RequestHandler } from "express";
+
+export const registro = new client.Registry();
+client.collectDefaultMetrics({ register: registro });       // CPU, memória, GC, Event Loop...
+
+const duracao = new client.Histogram({
+  name: "http_request_duration_seconds",
+  help: "Duração das requisições HTTP",
+  labelNames: ["metodo", "rota", "status"],
+  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
+  registers: [registro],
+});
+
+export const medirDuracao: RequestHandler = (req, res, next) => {
+  const fim = duracao.startTimer({ metodo: req.method, rota: req.route?.path ?? req.path });
+  res.on("finish", () => fim({ status: res.statusCode }));   // registra ao terminar, com o status final
+  next();
+};
+
+export function registrarMetricas(app: Express) {
+  app.get("/metrics", async (_req, res) => {
+    res.setHeader("Content-Type", registro.contentType);
+    res.send(await registro.metrics());
+  });
+}
+// O Prometheus faz scraping de /metrics; dashboards (Grafana) e alertas consomem as séries.
+// IMPORTANTE: /metrics NÃO é pública — proteja por rede ou autenticação.
+```
+
+### 6. Tracing com OpenTelemetry (visão geral)
+
+```ts
+// src/infra/tracing.ts — inicialize ANTES da aplicação:
+//   node --import ./dist/infra/tracing.js dist/server.js
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+
+const sdk = new NodeSDK({
+  traceExporter: new OTLPTraceExporter({ url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT }),
+  instrumentations: [getNodeAutoInstrumentations()],   // http, express, pg, fetch... automaticamente
+});
+sdk.start();
+```
+
+Com isso, um trace mostra a cadeia completa — `POST /livros → handler → query pg → resposta`, com a duração de
+cada *span*: a resposta objetiva para "por que ESSA requisição demorou 2 s?".
+
+### 7. Dockerfile multi-stage + `.dockerignore`
+
+```dockerfile
+# Dockerfile
+# ---------- estágio 1: dependências ----------
+FROM node:24-alpine AS deps
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile
+
+# ---------- estágio 2: build ----------
+FROM node:24-alpine AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN corepack enable && pnpm build && pnpm prune --prod
+
+# ---------- estágio 3: runtime mínimo ----------
+FROM node:24-alpine AS runtime
+ENV NODE_ENV=production
+WORKDIR /app
+RUN addgroup -S app && adduser -S app -G app          # usuário não-root
+COPY --from=build --chown=app:app /app/node_modules ./node_modules
+COPY --from=build --chown=app:app /app/dist ./dist
+COPY --from=build --chown=app:app /app/package.json ./package.json
+USER app
+EXPOSE 3000
+# --max-old-space-size alinhado ao limite de memória do contêiner (Módulo 1)
+CMD ["node", "--max-old-space-size=768", "dist/server.js"]
+```
+
+```text
+# .dockerignore
+node_modules
+dist
+coverage
+.git
+.github
+*.md
+.env
+.env.*
+tests
+```
+
+Boas práticas aplicadas: lockfile congelado no build, devDependencies **fora** da imagem final, usuário não-root,
+imagem final sem ferramentas de build, `--max-old-space-size` coerente com o limite de memória do orquestrador.
+
+### 8. Job de deploy no CI (build + push da imagem)
+
+```yaml
+# .github/workflows/deploy.yml — job que RODA DEPOIS do CI de qualidade (needs: qualidade)
+  deploy:
+    needs: qualidade
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}    # imagem imutável por commit
+          cache-from: type=gha        # cache de camadas entre runs
+          cache-to: type=gha,mode=max
+```
+
+O roll-out (Kubernetes `kubectl rollout`, ECS `update-service`, etc.) é gatilhado por esse push — sempre a
+**mesma imagem** que passou no CI, identificada pelo SHA do commit.
+
+### 9. `docker-compose.yml` de apoio (desenvolvimento local)
+
+```yaml
+# docker-compose.yml — banco e cache locais. NÃO é orquestração de produção.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: biblioteca
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+volumes:
+  pgdata:
+```
+
+## 8.3 Dicas de Ouro / Anti-patterns
+
+**✅ Faça**
+
+- Meça **p95/p99 e Event Loop lag** continuamente em produção; otimize só o que a medição apontar.
+- Rode `autocannon` antes/depois de mudanças de performance, no mesmo ambiente.
+- Logs estruturados com `pino`, **correlation ID** propagado (logs → traces → chamadas externas).
+- Exponha `/health` (liveness, barato) e `/ready` (readiness, checa dependências) **separados**.
+- Métricas RED por rota + métricas default do runtime; `/metrics` protegida.
+- Dockerfile **multi-stage**, lockfile congelado, sem devDependencies, usuário não-root, `.dockerignore`.
+- Graceful shutdown testado de verdade: `docker stop` e observe as requisições terminarem e os pools fecharem.
+- Alinhe `--max-old-space-size` ao limite de memória do contêiner e a janela de término ao tempo de shutdown.
+- Imagem imutável por commit (tag = SHA); configuração apenas por variáveis de ambiente.
+
+**❌ Nunca faça**
+
+- Otimizar sem *baseline* de medição; decidir arquitetura por benchmark de "hello world".
+- Colocar checagem de **banco no liveness** (reinício em cascata) ou **expor `/metrics` publicamente**.
+- `console.log` em produção (síncrono, sem níveis, sem redact) — use `pino`.
+- Logar sem correlation ID e tentar juntar eventos por "hora aproximada".
+- Build de imagem com `npm install` (use o lockfile congelado) ou com devDependencies na imagem final.
+- Rodar como root no contêiner "só para simplificar".
+- Fazer deploy de imagem `:latest` — imutável e por SHA, sempre.
+- Reiniciar processos manualmente para "limpar memória" em vez de investigar o vazamento (Módulo 5).
+- Ignorar o SIGTERM (deploy mata conexões no meio e gera 5xx para usuários reais).
+
+---
+
+# Apêndice A: Checklist de produção
+
+Use em revisões antes do go-live e periodicamente depois. Itens com a seção de origem entre parênteses.
+
+## Configuração e ambiente
+- [ ] `engines` + `packageManager` + `.nvmrc`; CI e Docker na MESMA versão do Node (M2)
+- [ ] Lockfile commitado; CI/Docker usam instalação congelada (`npm ci` / `--frozen-lockfile`) (M2)
+- [ ] Variáveis de ambiente validadas na subida (fail fast), objeto `env` tipado e imutável (M2)
+- [ ] `.env` no `.gitignore`; segredos reais em gerenciador de segredos; nunca variáveis de front-end (M2)
+- [ ] `NODE_ENV=production` na imagem; configuração 12-factor (só ambiente) (M2/M8)
+
+## Código e arquitetura
+- [ ] Controllers finos; regras de negócio em serviços/entidades (M4)
+- [ ] Validação de TODA entrada nas fronteiras (Zod), tipo inferido como contrato único (M4)
+- [ ] Tratador global de erros com formato padronizado + `traceId`; `res.headersSent` respeitado (M4)
+- [ ] `async/await` em todo caminho; ESLint `no-floating-promises`/`no-misused-promises` ativos (M3/M7)
+- [ ] Sem bloqueio de Event Loop em rotas (CPU pesado em Workers/filas) (M1)
+- [ ] Timeouts em TODA chamada externa e no servidor HTTP (M3/M4)
+
+## Banco de dados
+- [ ] Pool único por processo; `connectionTimeoutMillis` e `statement_timeout` definidos (M5)
+- [ ] `release()` em `finally`; evento `'error'` do pool tratado (M5)
+- [ ] Queries parametrizadas; zero concatenação de SQL com entrada do usuário (M5/M6)
+- [ ] Migrations versionadas; `synchronize: false` / sem `db push` em produção (M5)
+- [ ] Paginação em toda listagem; cursores para grandes volumes; índices nos filtros (M5)
+- [ ] Shutdown fecha pools (`pool.end()`, `prisma.$disconnect()`) (M5)
+
+## Segurança (OWASP 2025)
+- [ ] Helmet + CORS com allow-list + `trust proxy` correto (M6)
+- [ ] Rate limit global + específico em login/cadastro/refresh; store compartilhado multi-instância (M6)
+- [ ] Senhas Argon2id; tokens com `crypto.randomBytes`; JWT com exp/iss/aud + algoritmo fixo (M6)
+- [ ] Refresh token: rotação, detecção de reuso, cookie HttpOnly+Secure+SameSite, hash no banco (M6)
+- [ ] Autorização por dono em TODA rota por id (IDOR/BOLA); RBAC onde aplicável (M6)
+- [ ] Anti-SSRF em qualquer fetch a URL do usuário; anti-traversal em caminhos de arquivo (M6)
+- [ ] `express.json({ limit })`; limite de upload; CSRF (Origin + SameSite) se autenticação por cookie (M4/M6)
+- [ ] `pnpm audit` no CI falhando em high/critical; Renovate/Dependabot; SBOM se projeto crítico (M2/M6)
+- [ ] Logs de segurança (login, 403, refresh reusado) com redact de segredos (M6)
+
+## Testes e CI
+- [ ] Unitários de domínio/casos de uso (fakes) + integração HTTP + persistência real (Testcontainers) (M7)
+- [ ] Cobertura com thresholds no CI (sem regredir); caminhos de erro testados (M7)
+- [ ] Pipeline: lint → typecheck → test → build → audit; mesmo Node do `.nvmrc` (M7)
+
+## Observabilidade e operação
+- [ ] Logs estruturados (pino) com correlation ID propagado (M6/M8)
+- [ ] `/health` (liveness) e `/ready` (readiness) separados; `/metrics` protegida (M8)
+- [ ] Alertas no Event Loop lag (p99) e na taxa de 5xx (M8)
+- [ ] Tracing (OpenTelemetry) cobrindo chamadas externas e queries (M8)
+
+## Deploy
+- [ ] Imagem multi-stage, lockfile congelado, sem devDependencies, usuário não-root, `.dockerignore` (M8)
+- [ ] `--max-old-space-size` alinhado ao limite de memória do contêiner (M1/M8)
+- [ ] Graceful shutdown funcional (SIGTERM → termina requisições → fecha pools → exit 0) (M3/M8)
+- [ ] Deploy por imagem imutável (SHA), nunca `:latest`; rollback testado (M8)
+
+---
+
+# Apêndice B: Roteiro de estudos e referências
+
+## Roteiro sugerido (8 semanas, ~5–8 h/semana)
+
+| Semana | Foco | Entregável de consolidação |
+|--------|------|-----------------------------|
+| 1 | Módulos 1 e 2 | Desenhe de memória as fases do Event Loop; suba um projeto com `env` validada por Zod + pnpm + `.nvmrc` + `engines` |
+| 2 | Módulo 3 | Reimplemente `mapComLimite` do zero; escreva um `Transform` que converta um CSV real de 1 GB com memória constante (mensure o RSS) |
+| 3 | Módulo 4 | Reescreva um CRUD seu em camadas (rota → serviço → repositório) com tratador de erros Problem Details e app injetável |
+| 4 | Módulo 5 | Modele um domínio pequeno com migration, pool dimensionado e transação; rode `EXPLAIN ANALYZE` nos filtros e crie os índices |
+| 5 | Módulo 6 | Implemente login completo (Argon2id + JWT + refresh com rotação); tente quebrar as próprias rotas (IDOR, enumeração, SQL injection num lab) |
+| 6 | Módulo 7 | Cubra um caso de uso com fakes, um endpoint com Supertest e um fluxo com Testcontainers; configure o CI completo |
+| 7 | Módulo 8 | Containerize a app (multi-stage), suba Prometheus + Grafana locais, gere carga com autocannon e encontre o gargalo do p99 |
+| 8 | Revisão | Aplique o checklist do Apêndice A num projeto real ou de estudo; escreva os 5 aprendizados mais importantes |
+
+## Como estudar cada tipo de conteúdo
+
+- **Conceitos (Event Loop, V8, libuv):** implemente os exemplos e **mude-os até quebrar** — troque
+  `setImmediate` por `setTimeout`, adie um `nextTick` — e explique a diferença. Leitura passiva não fixa Event Loop.
+- **APIs (`fs`, `stream`, `crypto`):** monte scripts `.mjs` pequenos e jogáveis de laboratório. Errar na
+  codificação ensina mais que ler o snippet.
+- **Arquitetura e segurança:** estude por contraste — pegue um código seu antigo, aplique o checklist do
+  Apêndice A e anote o custo/benefício de cada mudança.
+- **Operação (Módulo 8):** só se aprende observando um sistema de verdade; suba a stack local (Compose) e quebre
+  coisas de propósito (derrube o banco, mate o Redis, force 5xx) para ver os sinais em logs, métricas e traces.
+
+## Referências (confira sempre a versão vigente)
+
+| Tema | Referência |
+|------|-----------|
+| Runtime e APIs do Node | [nodejs.org/api](https://nodejs.org/api/) (selecione a sua versão no menu) |
+| Releases e LTS | [nodejs.org/en/about/previous-releases](https://nodejs.org/en/about/previous-releases) |
+| Migração Express 4 → 5 | [expressjs.com/en/guide/migrating-5](https://expressjs.com/en/guide/migrating-5.html) |
+| Fastify | [fastify.dev](https://fastify.dev/) |
+| NestJS | [docs.nestjs.com](https://docs.nestjs.com/) |
+| Prisma | [prisma.io/docs](https://www.prisma.io/docs) |
+| Design do libuv / Event Loop | [docs.libuv.org — Design overview](https://docs.libuv.org/en/v1.x/design.html) |
+| V8 (hidden classes, otimização) | [v8.dev/docs](https://v8.dev/docs) e [mathiasbynens.be/notes/shapes-ics](https://mathiasbynens.be/notes/shapes-ics) |
+| OWASP Top 10 | [owasp.org/Top10](https://owasp.org/Top10/) e [cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/) |
+| JWT | [RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519) e [RFC 8725](https://datatracker.ietf.org/doc/html/rfc8725) (best practices) |
+| Problem Details | [RFC 9457](https://datatracker.ietf.org/doc/html/rfc9457) |
+| Argon2 / password hashing | [RFC 9106](https://datatracker.ietf.org/doc/html/rfc9106) |
+| OpenTelemetry (JS) | [opentelemetry.io/docs/languages/js](https://opentelemetry.io/docs/languages/js/) |
+| Testcontainers (Node) | [node.testcontainers.org](https://node.testcontainers.org/) |
+| Twelve-Factor App | [12factor.net/pt_br](https://12factor.net/pt_br/) |
+
+> **Aviso de desatualização:** versões de Node, bibliotecas e até o OWASP Top 10 mudam com o tempo. Este guia
+> reflete o cenário de outubro/2026. Antes de fixar versões ou decidir arquitetura, confirme nas fontes acima.
+
+---
+
+*Fim do guia. Trate cada exemplo como código de verdade: adapte, meça e teste no SEU contexto antes de levar a
+produção.*
