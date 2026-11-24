@@ -1,3 +1,4 @@
+
 import {
   LayoutDashboard,
   BookOpen,
@@ -10,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 import "../styles/sidebar.css";
 
@@ -57,6 +58,31 @@ const itensNavegacao = [
 ];
 
 export default function Sidebar({ onClose }) {
+  const navigate = useNavigate();
+
+  /*
+  |--------------------------------------------------------------------------
+  | LOGOUT
+  |--------------------------------------------------------------------------
+  | Remove os dados de autenticação e redireciona
+  | o administrador para a tela de login.
+  |--------------------------------------------------------------------------
+  */
+
+  function realizarLogout() {
+    // Remove o token JWT.
+    localStorage.removeItem("token");
+
+    // Remove os dados do usuário autenticado.
+    localStorage.removeItem("usuario");
+
+    // Fecha a sidebar, caso esteja aberta.
+    onClose?.();
+
+    // Redireciona para a página de login.
+    navigate("/login", { replace: true });
+  }
+
   return (
     <aside className="sidebar">
       {/* LOGO */}
@@ -97,7 +123,9 @@ export default function Sidebar({ onClose }) {
                   to={item.caminho}
                   onClick={onClose}
                   className={({ isActive }) =>
-                    `sidebar__link ${isActive ? "sidebar__link--ativo" : ""}`
+                    `sidebar__link ${
+                      isActive ? "sidebar__link--ativo" : ""
+                    }`
                   }
                 >
                   <Icone size={20} />
@@ -123,12 +151,11 @@ export default function Sidebar({ onClose }) {
           </div>
         </div>
 
+        {/* BOTÃO SAIR */}
         <button
           type="button"
           className="sidebar__logout"
-          onClick={() => {
-            // Implementaremos o logout posteriormente.
-          }}
+          onClick={realizarLogout}
         >
           <LogOut size={18} />
           <span>Sair</span>

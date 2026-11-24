@@ -484,7 +484,7 @@ export default function Emprestimos() {
       {emprestimoSelecionado && (
         <EmprestimoDetalhes
           emprestimo={emprestimoSelecionado}
-          onFechar={fecharDetalhes}
+          onClose={fecharDetalhes}
           onRegistrarDevolucao={handleRegistrarDevolucao}
           devolvendoId={devolvendoId}
         />
